@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from . import agents, memory, models
 from .rag import query_rag
-from .search_bridge import parse_tool_commands, run_search
+from .tools import process_tools, strip_tools
 from .db import get_db, init_db, SessionLocal
 from .utils import configure_logging
 
@@ -61,17 +61,24 @@ def history(chat_id: int, db: Session = Depends(get_db)):
 def get_memory(db: Session = Depends(get_db)):
     entries = memory.list_memories(db)
     return [
-        {"id": m.id, "key": m.key, "content": m.content, "created_at": m.created_at}
+        {"id": m.id, "text": m.text, "timestamp": m.timestamp}
         for m in entries
     ]
 
 
 @app.post("/api/memory")
 def add_memory(payload: dict, db: Session = Depends(get_db)):
-    key = payload.get("key", "general")
     content = payload.get("content", "")
-    entry = memory.save_memory(db, key, content)
-    return {"id": entry.id, "key": entry.key, "content": entry.content}
+    entry = memory.write_memory(db, content)
+    return {"id": entry.id, "text": entry.text, "timestamp": entry.timestamp}
+
+
+@app.post("/api/memory/delete")
+def delete_memory(payload: dict, db: Session = Depends(get_db)):
+    text = payload.get("text", "")
+    if text:
+        memory.delete_memory(db, text)
+    return {"status": "ok"}
 
 
 @app.post("/api/chat")
@@ -101,6 +108,7 @@ def chat(payload: dict, db: Session = Depends(get_db)):
         msg = models.Message(chat_id=chat_id, role=role, content=content)
         db.add(msg)
     db.commit()
+    memory.autosummarize(db)
 
     return {"chat_id": chat_id, "reply": reply}
 
@@ -152,10 +160,13 @@ async def websocket_endpoint(websocket: WebSocket):
 
             memories = memory.recall_memory(db, message)
             rag_hits = query_rag(message)
+            longterm = memory.auto_recall()
             context_blocks = []
+            if longterm:
+                context_blocks.append("Long-term memory:\n" + "\n".join(longterm))
             if memories:
                 context_blocks.append(
-                    "Relevant memories:\n" + "\n".join([m.content for m in memories])
+                    "Relevant memories:\n" + "\n".join([m.text for m in memories])
                 )
             if rag_hits:
                 rag_text = "\n---\n".join([f"{name}: {content}" for name, content, _ in rag_hits])
@@ -174,23 +185,16 @@ async def websocket_endpoint(websocket: WebSocket):
                 accumulated += chunk
                 await websocket.send_json({"type": "token", "token": chunk})
 
-            commands = parse_tool_commands(accumulated) if allow_search else []
+            processed = process_tools(db, accumulated, allow_search=allow_search)
+            clean_processed = strip_tools(processed)
 
-            if commands:
-                tool_outputs = []
-                for query in commands:
-                    result = run_search(query)
-                    memory.save_search_cache(db, query, result)
-                    tool_outputs.append(f"Search for '{query}':\n{result}")
-                if tool_outputs:
-                    accumulated += "\n\nWeb search results integrated:\n" + "\n\n".join(tool_outputs)
-                    await websocket.send_json({"type": "token", "token": "\n\n" + "\n\n".join(tool_outputs)})
-
-            for role, content in [("user", message), ("assistant", accumulated)]:
+            for role, content in [("user", message), ("assistant", clean_processed)]:
                 msg = models.Message(chat_id=chat_id, role=role, content=content)
                 db.add(msg)
             db.commit()
+            memory.autosummarize(db)
 
+            await websocket.send_json({"type": "final", "content": clean_processed})
             await websocket.send_json({"type": "done", "chat_id": chat_id})
     except WebSocketDisconnect:
         pass

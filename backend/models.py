@@ -30,9 +30,8 @@ class Memory(Base):
     __tablename__ = "memory"
 
     id = Column(Integer, primary_key=True, index=True)
-    key = Column(String, index=True)
-    content = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    text = Column(Text)
+    timestamp = Column(String, default=lambda: datetime.utcnow().isoformat())
 
 
 class Recall(Base):

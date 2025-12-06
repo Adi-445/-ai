@@ -44,7 +44,22 @@ function addMessage(role, content) {
 
 async function loadMemory() {
   const data = await api('/api/memory');
-  memoryPanel.innerHTML = data.map(m => `<div><strong>${m.key}</strong>: ${m.content}</div>`).join('');
+  memoryPanel.innerHTML = data.map(m => `
+    <div class="memory-row">
+      <div>
+        <div class="timestamp">${m.timestamp}</div>
+        <div class="text">${m.text}</div>
+      </div>
+      <button data-text="${encodeURIComponent(m.text)}">Delete</button>
+    </div>
+  `).join('');
+  memoryPanel.querySelectorAll('button').forEach(btn => {
+    btn.onclick = async () => {
+      const text = decodeURIComponent(btn.dataset.text);
+      await api('/api/memory/delete', {method: 'POST', body: JSON.stringify({text})});
+      await loadMemory();
+    };
+  });
 }
 
 async function loadChat(chatId) {
@@ -96,6 +111,13 @@ async function sendMessage() {
       document.querySelector('#streaming .content').innerHTML = marked.parse(buffer);
       messagesEl.scrollTop = messagesEl.scrollHeight;
     }
+    if (data.type === 'final') {
+      buffer = data.content;
+      const streaming = document.getElementById('streaming');
+      if (streaming) {
+        document.querySelector('#streaming .content').innerHTML = marked.parse(buffer);
+      }
+    }
     if (data.type === 'done') {
       const streaming = document.getElementById('streaming');
       if (streaming) streaming.id = '';
@@ -115,4 +137,5 @@ themeSelect.onchange = (e) => applyTheme(e.target.value);
   applyTheme(localStorage.getItem('theme') || 'dark');
   await createChat();
   await loadMemory();
+  themeSelect.value = localStorage.getItem('theme') || 'dark';
 })();

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from . import memory
 from .rag import query_rag
-from .search_bridge import parse_tool_commands, run_search
+from .tools import process_tools
 
 logger = logging.getLogger(__name__)
 
@@ -36,9 +36,12 @@ def generate_reply(
 ) -> str:
     memories = memory.recall_memory(db, user_message)
     rag_hits = query_rag(user_message)
+    longterm = memory.auto_recall()
     context_blocks = []
+    if longterm:
+        context_blocks.append("Long-term memory:\n" + "\n".join(longterm))
     if memories:
-        joined = "\n".join([m.content for m in memories])
+        joined = "\n".join([m.text for m in memories])
         context_blocks.append(f"Relevant memories:\n{joined}")
     if rag_hits:
         rag_text = "\n---\n".join([f"{name}: {content}" for name, content, _ in rag_hits])
@@ -52,15 +55,5 @@ def generate_reply(
     augmented_history.append({"role": "user", "content": user_message})
 
     reply = _ollama_chat(augmented_history, model=model)
-
-    if allow_search:
-        commands = parse_tool_commands(reply)
-        if commands:
-            tool_outputs = []
-            for query in commands:
-                result = run_search(query)
-                memory.save_search_cache(db, query, result)
-                tool_outputs.append(f"Search for '{query}':\n{result}")
-            reply = reply.replace("</web.search>", "</web.search>\n")
-            reply += "\n\nWeb search results integrated:\n" + "\n\n".join(tool_outputs)
+    reply = process_tools(db, reply, allow_search=allow_search)
     return reply
