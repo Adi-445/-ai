@@ -29,14 +29,19 @@ if [ ! -d .venv ] || [ ! -f .venv/bin/activate ]; then
 fi
 source .venv/bin/activate
 
-INSTALL_CMD=(uv pip install --upgrade --index-url https://pypi.org/simple -r backend/requirements.txt)
+INSTALL_CMD=(uv pip install --python .venv/bin/python --upgrade --index-url https://pypi.org/simple -r backend/requirements.txt)
 if [ -n "${PIP_EXTRA_INDEX_URL:-}" ]; then
   INSTALL_CMD+=(--extra-index-url "$PIP_EXTRA_INDEX_URL")
 fi
 if ! "${INSTALL_CMD[@]}"; then
   echo "Retrying dependency install without extra indexes..."
-  uv pip install --upgrade --index-url https://pypi.org/simple -r backend/requirements.txt
+  uv pip install --python .venv/bin/python --upgrade --index-url https://pypi.org/simple -r backend/requirements.txt
 fi
+
+python - <<'PY'
+import uvicorn
+print(f"uvicorn available: {uvicorn.__version__}")
+PY
 
 chmod +x agent/search.sh agent/install.sh
 ./agent/install.sh
