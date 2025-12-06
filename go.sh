@@ -25,6 +25,16 @@ fi
 
 source "$VENV_DIR/bin/activate"
 
+echo "[setup] Ensuring pip is available inside virtualenv..."
+if ! "$VENV_PY" -m pip --version >/dev/null 2>&1; then
+  echo "[setup] Bootstrapping pip via ensurepip..."
+  if ! "$VENV_PY" -m ensurepip --upgrade >/dev/null 2>&1; then
+    echo "[warn] ensurepip inside venv failed; retrying with system Python"
+    "$PYTHON" -m ensurepip --upgrade || true
+    "$VENV_PY" -m ensurepip --upgrade || true
+  fi
+fi
+
 echo "[setup] Upgrading pip inside virtualenv..."
 "$VENV_PY" -m pip install --upgrade pip
 
