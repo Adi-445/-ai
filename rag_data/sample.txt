@@ -1,0 +1,1 @@
+This is sample RAG content. Add domain knowledge files here to enrich the assistant answers with local data. Each .txt file becomes part of the embedding index.
