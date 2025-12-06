@@ -12,6 +12,8 @@ if [ ! -d .venv ]; then
   "$PYTHON" -m venv .venv
 fi
 source .venv/bin/activate
+# Prefer CPU-only PyTorch wheels to avoid pulling NVIDIA CUDA packages automatically
+export PIP_EXTRA_INDEX_URL=${PIP_EXTRA_INDEX_URL:-https://download.pytorch.org/whl/cpu}
 python -m pip install --upgrade pip
 python -m pip install -r backend/requirements.txt
 

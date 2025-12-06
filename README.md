@@ -8,6 +8,7 @@ This project provides a FastAPI-based local chat interface for Ollama models wit
 bash go.sh
 ```
 The script will create a virtual environment, install dependencies, build RAG embeddings from `rag_data/*.txt`, initialize the SQLite database under `memory/memory.db`, and start the FastAPI server at `http://localhost:8000`.
+`go.sh` defaults `PIP_EXTRA_INDEX_URL` to the CPU-only PyTorch wheel index to avoid pulling NVIDIA CUDA packages; unset or override this if you want CUDA-enabled wheels.
 
 ## Features
 - WebSocket streaming chat with Ollama (defaults to `smollm2x`).
