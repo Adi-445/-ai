@@ -3,11 +3,19 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
-UVICORN_BIN="$(command -v uvicorn || true)"
+VENV_DIR="$SCRIPT_DIR/.venv"
+VENV_UVICORN="$VENV_DIR/bin/uvicorn"
+
+if [ -x "$VENV_UVICORN" ]; then
+  UVICORN_BIN="$VENV_UVICORN"
+else
+  UVICORN_BIN="$(command -v uvicorn || true)"
+fi
+
 if [ -z "$UVICORN_BIN" ]; then
   echo "uvicorn is not installed. Run go.sh first to install dependencies." >&2
   exit 1
 fi
 
-echo "[run] Launching backend on 0.0.0.0:8000 using system Python..."
+echo "[run] Launching backend on 0.0.0.0:8000..."
 exec "$UVICORN_BIN" backend.main:app --host 0.0.0.0 --port 8000

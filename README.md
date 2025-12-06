@@ -4,11 +4,11 @@ This project provides a FastAPI-based local chat interface for Ollama models wit
 
 ## Quick start
 ```bash
-# requires Python 3.10+, pipx, curl, and a local Ollama daemon
+# requires Python 3.10+, curl, and a local Ollama daemon
 bash go.sh
 ```
-The script will install `pipx` (if missing), provision `uv` through pipx, install dependencies directly into your system/user environment (no virtualenv), build RAG embeddings from `rag_data/*.txt`, initialize the SQLite database under `memory/memory.db`, and start the FastAPI server at `http://localhost:8000`.
-`go.sh` defaults `PIP_EXTRA_INDEX_URL` to the CPU-only PyTorch wheel index to avoid pulling NVIDIA CUDA packages; unset or override this if you want CUDA-enabled wheels. Dependencies install system-wide, so make sure your user has permission to write to site-packages or run the script with appropriate privileges.
+The script will create a local virtual environment at `.venv`, install dependencies into it, build RAG embeddings from `rag_data/*.txt`, initialize the SQLite database under `memory/memory.db`, and start the FastAPI server at `http://localhost:8000`.
+`go.sh` defaults `PIP_EXTRA_INDEX_URL` to the CPU-only PyTorch wheel index to avoid pulling NVIDIA CUDA packages; unset or override this if you want CUDA-enabled wheels. All Python packages stay isolated inside the virtualenv so your system Python remains untouched.
 
 ## Features
 - WebSocket streaming chat with Ollama (defaults to `smollm2x`).
