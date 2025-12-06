@@ -8,7 +8,8 @@ PYTHON=${PYTHON:-python3}
 print('Setting up virtual environment...')
 PY
 
-if [ ! -d .venv ]; then
+if [ ! -d .venv ] || [ ! -f .venv/bin/activate ]; then
+  rm -rf .venv
   "$PYTHON" -m venv .venv
 fi
 source .venv/bin/activate
