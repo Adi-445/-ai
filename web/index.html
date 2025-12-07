@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ollama Local Chat</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="logo">
+        <img src="logo.svg" alt="logo" />
+        <span>Ollama Chat</span>
+      </div>
+      <button id="newChat" class="primary">New Chat</button>
+      <div class="section">
+        <h3>Chats</h3>
+        <ul id="chatList"></ul>
+      </div>
+      <div class="section">
+        <h3>Memory</h3>
+        <div id="memoryPanel" class="memory-panel"></div>
+      </div>
+      <div class="section">
+        <h3>Settings</h3>
+        <label>Model <input id="model" value="smollm2x" /></label>
+        <label><input type="checkbox" id="allowSearch" checked /> Enable search</label>
+        <label>Theme
+          <select id="themeSelect">
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+            <option value="amoled">AMOLED</option>
+          </select>
+        </label>
+      </div>
+    </aside>
+    <main class="chat-pane">
+      <div class="messages" id="messages"></div>
+      <div class="composer">
+        <textarea id="input" placeholder="Message..." rows="2"></textarea>
+        <button id="send" class="primary">Send</button>
+      </div>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
